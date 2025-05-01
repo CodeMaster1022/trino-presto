@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  trino:
+    image: trinodb/trino:latest
+    ports:
+      - "8080:8080" 
+    volumes:
+      - ./catalog:/etc/trino/catalog 
+    depends_on:
+      - postgres
+      - postgres_db2
+
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  postgres_db2:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: db2
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"  # Note the different host port to avoid conflicts
+    volumes:
+      - postgres-db2-data:/var/lib/postgresql/data
+  fastapi:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - postgres_db2
+    environment:
+    - DB1_HOST=postgres
+    - DB1_PORT=5432
+    - DB1_USER=user
+    - DB1_PASSWORD=password
+    - DB1_NAME=db
+    - DB2_HOST=postgres_db2
+    - DB2_PORT=5432
+    - DB2_USER=user
+    - DB2_PASSWORD=password
+    - DB2_NAME=db2
+volumes:
+  postgres-data:
+  postgres-db2-data:
